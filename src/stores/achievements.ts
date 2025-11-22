@@ -4,6 +4,7 @@ import type { Achievement, GameState } from "../types";
 import { codingPoints, clickCount, pointsPerSecond, activeUsers } from "./game";
 import { upgrades } from "./upgrades";
 import { researchedTechs } from "./research";
+import { AchievementManager } from "../core/AchievementManager";
 
 export const achievements = writable<Achievement[]>(initialAchievements);
 export const notificationQueue = writable<Achievement[]>([]);
@@ -19,15 +20,13 @@ export const checkAchievements = () => {
     researchedTechs: get(researchedTechs),
   };
 
-  achievements.update((achs) => {
-    return achs.map((ach) => {
-      if (!ach.unlocked && ach.condition(state)) {
-        notificationQueue.update((q) => [...q, ach]);
-        return { ...ach, unlocked: true };
-      }
-      return ach;
-    });
-  });
+  // Use AchievementManager to check and unlock achievements with rewards
+  const newlyUnlocked = AchievementManager.checkAll(state);
+
+  // Add to notification queue
+  if (newlyUnlocked.length > 0) {
+    notificationQueue.update((q) => [...q, ...newlyUnlocked]);
+  }
 };
 
 export const resetAchievements = () => {

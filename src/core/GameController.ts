@@ -12,6 +12,7 @@ import {
   ppsMultiplier,
   clickMultiplier,
   prestigeExponent,
+  achievementMultiplier,
 } from "../stores/game";
 import { researchedTechs, addTech, resetResearch } from "../stores/research";
 import { upgrades, resetUpgrades, buyUpgrade } from "../stores/upgrades";
@@ -36,9 +37,12 @@ export class GameController {
   private static saveInterval: number;
 
   static handleUserCodeInput() {
-    // Calculate actual click power: base * clickMultiplier * prestigeMultiplier
+    // Calculate actual click power: base * clickMultiplier * prestigeMultiplier * achievementMultiplier
     const power =
-      get(clickPower) * get(clickMultiplier) * get(prestigeMultiplier);
+      get(clickPower) *
+      get(clickMultiplier) *
+      get(prestigeMultiplier) *
+      get(achievementMultiplier);
 
     codingPoints.update((n) => n + power);
     clickCount.update((n) => n + 1);
@@ -110,18 +114,19 @@ export class GameController {
       activeUsers.update((n) => n + pendingUsers);
 
       // Reset others
-      // Reset others
       resetUpgrades();
       resetResearch();
-      resetAchievements();
+      // NOTE: Do NOT reset achievements - they are permanent!
+      // resetAchievements();
 
-      // Reset multipliers
+      // Reset multipliers (but NOT achievement multiplier - that's permanent!)
       costDiscountMultiplier.set(1.0);
       unlockedFeatures.set(new Set());
       prestigeBoost.set(0);
       ppsMultiplier.set(1.0);
       clickMultiplier.set(1.0);
       prestigeExponent.set(0.5);
+      // achievementMultiplier and unlockedAchievements are preserved!
 
       saveGame();
       checkAchievements();
@@ -136,15 +141,12 @@ export class GameController {
 
     // Auto-click / PPS loop
     this.autoClickInterval = setInterval(() => {
-      const pps = get(pointsPerSecond); // This is base PPS from upgrades?
-      // Wait, in upgrades.ts: pointsPerSecond.update(n => n + value).
-      // So pointsPerSecond IS the total PPS from upgrades.
-      // We need to apply ppsMultiplier.
-
+      const pps = get(pointsPerSecond);
       const multiplier = get(ppsMultiplier);
       const prestigeMult = get(prestigeMultiplier);
+      const achieveMult = get(achievementMultiplier);
 
-      const finalPPS = pps * multiplier * prestigeMult;
+      const finalPPS = pps * multiplier * prestigeMult * achieveMult;
 
       if (finalPPS > 0) {
         codingPoints.update((n) => n + finalPPS / 10);

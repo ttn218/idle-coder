@@ -15,6 +15,10 @@ export const ppsMultiplier = writable(1.0);
 export const clickMultiplier = writable(1.0);
 export const prestigeExponent = writable(0.5); // Base prestige exponent, can be increased by research
 
+// Achievement system stores (persistent through prestige)
+export const achievementMultiplier = writable(1.0); // Global production multiplier from achievements
+export const unlockedAchievements = writable<Set<string>>(new Set()); // Set of unlocked achievement IDs
+
 // Multipliers (derived or writable depending on complexity, starting simple)
 export const prestigeMultiplier = derived(
   [activeUsers, prestigeBoost],

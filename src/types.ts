@@ -33,6 +33,11 @@ export interface Tech {
     users?: number;
   };
 }
+export interface AchievementReward {
+  type: "globalMultiplier";
+  value: number;
+  text: string;
+}
 
 export interface Achievement {
   id: string;
@@ -40,6 +45,7 @@ export interface Achievement {
   description: string;
   condition: (state: GameState) => boolean;
   unlocked: boolean;
+  reward?: AchievementReward;
 }
 
 export interface GameState {

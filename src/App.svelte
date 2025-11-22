@@ -21,6 +21,7 @@
     prestigeMultiplier,
     prestigeBoost,
     prestigeExponent,
+    achievementMultiplier,
   } from './stores/game';
   import { researchedTechs } from './stores/research';
   import { achievements } from './stores/achievements';
@@ -233,6 +234,9 @@
                 <div class="info">
                   <div class="name">{achievement.name}</div>
                   <div class="desc">{achievement.description}</div>
+                  {#if achievement.reward}
+                    <div class="reward">💎 {achievement.reward.text}</div>
+                  {/if}
                 </div>
               </div>
             {/each}
@@ -244,10 +248,11 @@
           
           <div class="stats-group">
             <p>Total Coding Points: {formatNumber($codingPoints)}</p>
-            <p>Click Power (CPC): {formatNumber($clickPower * $prestigeMultiplier * clickMultiplier)}</p>
-            <p>Points Per Second (PPS): {formatNumber($pointsPerSecond * $prestigeMultiplier * techPpsMultiplier)}</p>
+            <p>Click Power (CPC): {formatNumber($clickPower * $prestigeMultiplier * clickMultiplier * $achievementMultiplier)}</p>
+            <p>Points Per Second (PPS): {formatNumber($pointsPerSecond * $prestigeMultiplier * techPpsMultiplier * $achievementMultiplier)}</p>
             <p>Active Users: {formatNumber($activeUsers)}</p>
             <p>Prestige Bonus: +{formatNumber(($prestigeMultiplier - 1) * 100)}% (Research Boost: x{formatNumber($prestigeBoost + 1)})</p>
+            <p class="achievement-bonus">Achievement Bonus: x{formatNumber($achievementMultiplier)} (+{formatNumber(($achievementMultiplier - 1) * 100)}%)</p>
           </div>
 
           <div class="controls-group">
@@ -580,5 +585,17 @@
   .achievement-item .desc {
     color: #aaa;
     font-size: 0.9rem;
+  }
+
+  .achievement-item .reward {
+    color: #ffd700;
+    font-size: 0.85rem;
+    margin-top: 4px;
+    font-weight: bold;
+  }
+
+  .achievement-bonus {
+    color: #ffd700 !important;
+    font-weight: bold;
   }
 </style>
