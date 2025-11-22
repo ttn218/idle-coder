@@ -1,9 +1,10 @@
 <script lang="ts">
   import type { Upgrade } from '../types';
-  import { formatNumber } from '../utils/format';
-  import { upgrades, buyUpgrade } from '../stores/upgrades';
+  import { formatNumber, getPrice, getSumPrice, getMaxBuyable } from '../lib/utils';
+  import { upgrades } from '../stores/upgrades';
   import { codingPoints } from '../stores/game';
   import { costMultiplier } from '../stores/research';
+  import { GameController } from '../core/GameController';
 
   let buyAmount: 1 | 10 | -1 = 1; // -1 represents MAX
   let expandedCategories: Record<string, boolean> = {
@@ -25,27 +26,6 @@
     expandedCategories[category] = !expandedCategories[category];
   }
 
-  // Helper functions using geometric series formulas
-  // Note: These are duplicated from store logic for UI display purposes.
-  // Ideally, we could export these from a shared utility or the store itself.
-  function getPrice(basePrice: number, level: number): number {
-    return basePrice * Math.pow(1.5, level) * $costMultiplier;
-  }
-
-  function getSumPrice(basePrice: number, level: number, count: number): number {
-    const currentBasePrice = basePrice * Math.pow(1.5, level) * $costMultiplier;
-    if (count === 1) return currentBasePrice;
-    return currentBasePrice * (Math.pow(1.5, count) - 1) / (1.5 - 1);
-  }
-
-  function getMaxBuyable(basePrice: number, level: number, currentPoints: number): number {
-    const currentBasePrice = basePrice * Math.pow(1.5, level) * $costMultiplier;
-    
-    if (currentPoints < currentBasePrice) return 0;
-    
-    return Math.floor(Math.log(1 + (currentPoints * (1.5 - 1)) / currentBasePrice) / Math.log(1.5));
-  }
-
   // Reactive calculation for all items
   $: calculatedItems = Object.entries(groupedUpgrades).reduce((acc, [category, items]) => {
     acc[category] = items.map(item => {
@@ -54,15 +34,15 @@
       const currentLevel = item.level; 
 
       if (buyAmount === -1) { // MAX mode
-        count = getMaxBuyable(item.basePrice, currentLevel, $codingPoints);
+        count = getMaxBuyable(item.basePrice, currentLevel, $codingPoints, $costMultiplier);
         if (count > 0) {
-          cost = getSumPrice(item.basePrice, currentLevel, count);
+          cost = getSumPrice(item.basePrice, currentLevel, count, $costMultiplier);
         } else {
-          cost = getPrice(item.basePrice, currentLevel);
+          cost = getPrice(item.basePrice, currentLevel, $costMultiplier);
         }
       } else { // x1, x10 mode
         count = buyAmount;
-        cost = getSumPrice(item.basePrice, currentLevel, count);
+        cost = getSumPrice(item.basePrice, currentLevel, count, $costMultiplier);
       }
 
       return { 
@@ -75,9 +55,7 @@
   }, {} as Record<string, (Upgrade & { buyCount: number, currentCost: number })[]>);
 
   function handleBuy(upgrade: Upgrade & { buyCount: number, currentCost: number }) {
-    if (upgrade.buyCount > 0 && $codingPoints >= upgrade.currentCost) {
-      buyUpgrade(upgrade.id, upgrade.buyCount);
-    }
+    GameController.purchaseItem(upgrade);
   }
 </script>
 

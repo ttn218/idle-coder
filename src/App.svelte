@@ -9,44 +9,19 @@
   import type { Upgrade, Tech, Achievement } from './types';
   import { researchItems } from './data/researchItems';
 
-  import { formatNumber } from './utils/format';
+  import { formatNumber } from './lib/utils';
+  import { GameController } from './core/GameController';
 
-  // Import stores
+  // Import stores (only for UI binding)
   import { 
     codingPoints, 
     clickPower, 
     pointsPerSecond, 
     activeUsers, 
-    clickCount, 
-    prestigeMultiplier, 
-    addPoints, 
-    incrementClickCount,
-    prestige
+    prestigeMultiplier
   } from './stores/game';
-  import { upgrades, buyUpgrade, resetUpgrades } from './stores/upgrades';
-  import { researchedTechs, research, resetResearch } from './stores/research';
-  import { achievements, checkAchievements, resetAchievements } from './stores/achievements';
-  import { loadGame, saveGame, resetAllData } from './stores/save';
-
-  // Import source code as raw strings
-  import appSource from './App.svelte?raw';
-  import shopSource from './components/UpgradeShop.svelte?raw';
-  import researchSource from './components/ResearchTree.svelte?raw';
-
-  let displayCode: string = "";
-  let snippetIndex: number = 0;
-  let codeDisplayElement: HTMLElement;
-  let autoClickInterval: number;
-  let saveInterval: number;
-
-  let showSaveMessage: boolean = false;
-  let showReleaseMessage: boolean = false;
-  let gainedUsers: number = 0;
-  let audioCtx: AudioContext;
-
-  // Derived values for UI
-  $: prestigeExponent = $researchedTechs.includes('viral_marketing') ? 0.6 : 0.5;
-  $: pendingUsers = Math.floor(Math.pow($codingPoints / 1000, prestigeExponent));
+  import { researchedTechs, prestigeBoost } from './stores/research';
+  import { achievements } from './stores/achievements';
 
   // Tech Multipliers Calculation
   $: techEffects = $researchedTechs.reduce((acc, techId) => {
@@ -57,7 +32,7 @@
           acc.autoClick = true;
           break;
         case 'function':
-          acc.costDiscount *= (1 - (tech.effect.value || 0));
+          acc.costDiscount *= (1 - (tech.effect.value ?? 0));
           break;
         case 'oop':
           acc.ppsMultiplier *= (tech.effect.value ? (1 + tech.effect.value) : 2);
@@ -70,6 +45,23 @@
   $: costMultiplier = techEffects.costDiscount;
   $: techPpsMultiplier = techEffects.ppsMultiplier;
   $: clickMultiplier = techEffects.clickMultiplier;
+
+  // Import source code as raw strings
+  import appSource from './App.svelte?raw';
+  import shopSource from './components/UpgradeShop.svelte?raw';
+  import researchSource from './components/ResearchTree.svelte?raw';
+
+  let displayCode: string = "";
+  let snippetIndex: number = 0;
+  let codeDisplayElement: HTMLElement;
+
+  let showSaveMessage: boolean = false;
+  let showReleaseMessage: boolean = false;
+  let gainedUsers: number = 0;
+
+  // Derived values for UI
+  $: prestigeExponent = $researchedTechs.includes('viral_marketing') ? 0.6 : 0.5;
+  $: pendingUsers = Math.floor(Math.pow($codingPoints / 1000, prestigeExponent));
 
   // Syntax Highlighting
   $: formattedCode = displayCode
@@ -88,30 +80,6 @@
     .split('\n')
     .map(line => line + '\n');
 
-  function playTypingSound() {
-    if (!audioCtx) {
-      audioCtx = new (window.AudioContext || (window as any).webkitAudioContext)();
-    }
-    
-    const oscillator = audioCtx.createOscillator();
-    const gainNode = audioCtx.createGain();
-    
-    oscillator.connect(gainNode);
-    gainNode.connect(audioCtx.destination);
-    
-    // Low frequency click/thud
-    oscillator.type = 'triangle';
-    oscillator.frequency.setValueAtTime(150, audioCtx.currentTime);
-    oscillator.frequency.exponentialRampToValueAtTime(50, audioCtx.currentTime + 0.1);
-    
-    // Short burst
-    gainNode.gain.setValueAtTime(0.1, audioCtx.currentTime);
-    gainNode.gain.exponentialRampToValueAtTime(0.01, audioCtx.currentTime + 0.1);
-    
-    oscillator.start();
-    oscillator.stop(audioCtx.currentTime + 0.1);
-  }
-
   let currentTab: 'upgrades' | 'research' | 'achievements' | 'system' = 'upgrades';
 
   function handleKeydown(event: KeyboardEvent) {
@@ -120,13 +88,7 @@
     }
 
     if (event.key.length === 1 && !event.ctrlKey && !event.altKey && !event.metaKey) {
-      // Calculate points to add
-      const points = $clickPower * $prestigeMultiplier * clickMultiplier;
-      addPoints(points);
-      incrementClickCount();
-      checkAchievements();
-      
-      playTypingSound();
+      GameController.handleUserCodeInput();
 
       const snippet = codeSnippets[snippetIndex % codeSnippets.length];
       displayCode += snippet;
@@ -143,11 +105,6 @@
   function handleKeyup(event: KeyboardEvent) {
     // Placeholder
   }
-
-  function addCodeSnippet() {
-    displayCode += codeSnippets[snippetIndex];
-    snippetIndex = (snippetIndex + 1) % codeSnippets.length;
-  }
   
   afterUpdate(() => {
     if (codeDisplayElement) {
@@ -155,75 +112,40 @@
     }
   });
 
-  function handleBuy(event: CustomEvent) {
-    const { id, amount } = event.detail;
-    buyUpgrade(id, amount);
-    checkAchievements();
-  }
-
-  function handleResearch(event: CustomEvent) {
-    const { techId } = event.detail;
-    research(techId);
-    checkAchievements();
-  }
-
   function triggerRelease() {
-    if ($codingPoints < 10000) return;
-
-    if (confirm(`서비스를 오픈하시겠습니까?\n현재 데이터를 초기화하고 ${formatNumber(pendingUsers)}명의 유저를 확보합니다.`)) {
-      gainedUsers = pendingUsers;
-      prestige(gainedUsers);
-      
-      resetUpgrades();
-      resetResearch();
-      resetAchievements();
-      
+    const result = GameController.triggerPrestige();
+    if (result !== null) {
+      gainedUsers = result;
       displayCode = "";
       snippetIndex = 0;
-
-      saveGame();
       
       showReleaseMessage = true;
       setTimeout(() => {
         showReleaseMessage = false;
       }, 3000);
-      checkAchievements();
     }
   }
 
   function handleSave() {
-    if (saveGame()) {
+    if (GameController.handleSave()) {
       showSaveMessage = true;
       setTimeout(() => showSaveMessage = false, 2000);
     }
   }
 
   function handleReset() {
-    if (confirm("정말 초기화 하시겠습니까? 모든 진행 상황이 사라집니다.")) {
-      resetAllData();
-    }
+    GameController.handleReset();
   }
 
   onMount(() => {
-    const lastSaveTime = loadGame();
+    GameController.startGameLoop();
     window.addEventListener('keydown', handleKeydown);
     window.addEventListener('keyup', handleKeyup);
     
-    autoClickInterval = setInterval(() => {
-      if ($pointsPerSecond > 0) {
-        const points = $pointsPerSecond * $prestigeMultiplier * techPpsMultiplier;
-        addPoints(points);
-        checkAchievements();
-      }
-    }, 1000);
-
-    saveInterval = setInterval(handleSave, 10000);
-
     return () => {
       window.removeEventListener('keydown', handleKeydown);
       window.removeEventListener('keyup', handleKeyup);
-      clearInterval(autoClickInterval);
-      clearInterval(saveInterval);
+      GameController.stopGameLoop();
     };
   });
 </script>
@@ -238,7 +160,11 @@
       </div>
       {#if $activeUsers > 0}
         <div class="prestige-stats">
-          Active Users: {formatNumber($activeUsers)} (Bonus: +{formatNumber($activeUsers * 10)}%)
+          Active Users: {formatNumber($activeUsers)} 
+          (Bonus: +{formatNumber(($prestigeMultiplier - 1) * 100)}%)
+          <span class="research-boost" title="Research Boost">
+            (x{formatNumber($prestigeBoost + 1)})
+          </span>
         </div>
       {/if}
     </div>
@@ -281,9 +207,9 @@
 
     <div class="tab-content">
       {#if currentTab === 'upgrades'}
-        <UpgradeShop on:buy={handleBuy} />
+        <UpgradeShop />
       {:else if currentTab === 'research'}
-        <ResearchTree on:research={handleResearch} />
+        <ResearchTree />
       {:else if currentTab === 'achievements'}
         <div class="achievements-panel">
           <h2>Achievements</h2>
@@ -308,7 +234,7 @@
             <p>Click Power (CPC): {formatNumber($clickPower * $prestigeMultiplier * clickMultiplier)}</p>
             <p>Points Per Second (PPS): {formatNumber($pointsPerSecond * $prestigeMultiplier * techPpsMultiplier)}</p>
             <p>Active Users: {formatNumber($activeUsers)}</p>
-            <p>Prestige Bonus: +{formatNumber($activeUsers * 10)}%</p>
+            <p>Prestige Bonus: +{formatNumber(($prestigeMultiplier - 1) * 100)}% (Research Boost: x{formatNumber($prestigeBoost + 1)})</p>
           </div>
 
           <div class="controls-group">

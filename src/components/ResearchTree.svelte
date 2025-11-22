@@ -1,16 +1,17 @@
 <script lang="ts">
   import { onMount } from 'svelte';
   import type { Tech } from '../types';
-  import { formatNumber } from '../utils/format';
+  import { formatNumber } from '../lib/utils';
   import { researchItems } from '../data/researchItems';
   import { codingPoints, activeUsers } from '../stores/game';
-  import { researchedTechs, research } from '../stores/research';
+  import { researchedTechs } from '../stores/research';
+  import { GameController } from '../core/GameController';
 
   // Props removed, using stores directly
   const techTree = researchItems;
 
   function handleResearch(tech: Tech) {
-    research(tech.id);
+    GameController.purchaseResearch(tech.id);
   }
 
   function isLocked(tech: Tech): boolean {
@@ -23,10 +24,9 @@
   }
 
   function canAfford(tech: Tech): boolean {
-    if (tech.currency === 'users') {
-      return $activeUsers >= tech.cost;
-    }
-    return $codingPoints >= tech.cost;
+    if (tech.costs.points && $codingPoints < tech.costs.points) return false;
+    if (tech.costs.users && $activeUsers < tech.costs.users) return false;
+    return true;
   }
 
   function getLineColor(sourceTechId: string, targetTechId: string): string {
@@ -149,13 +149,13 @@
           class:locked 
           class:researched 
           class:affordable={!locked && !researched && affordable}
-          class:special={tech.currency === 'users'}
+          class:special={!!tech.costs.users}
           style="left: {tech.x}px; top: {tech.y}px;"
           role="button"
           tabindex="0"
           aria-label={tech.name}
-          on:click|stopPropagation={() => !locked && !researched && affordable && research(tech.id)}
-          on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && !locked && !researched && affordable && research(tech.id)}
+          on:click|stopPropagation={() => !locked && !researched && affordable && GameController.purchaseResearch(tech.id)}
+          on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && !locked && !researched && affordable && GameController.purchaseResearch(tech.id)}
         >
           <!-- Icon or Symbol -->
           <div class="node-icon">
@@ -172,8 +172,13 @@
           <div class="tooltip">
             <h3>{tech.name}</h3>
             <p class="cost">
-              {formatNumber(tech.cost)} 
-              {tech.currency === 'users' ? 'Active Users' : 'pts'}
+              {#if tech.costs.points}
+                {formatNumber(tech.costs.points)} pts
+              {/if}
+              {#if tech.costs.points && tech.costs.users} + {/if}
+              {#if tech.costs.users}
+                {formatNumber(tech.costs.users)} Users
+              {/if}
             </p>
             <p class="desc">{tech.description}</p>
             {#if researched}
