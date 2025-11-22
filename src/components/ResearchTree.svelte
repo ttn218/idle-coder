@@ -1,44 +1,43 @@
 <script lang="ts">
-  import { createEventDispatcher, onMount } from 'svelte';
+  import { onMount } from 'svelte';
   import type { Tech } from '../types';
   import { formatNumber } from '../utils/format';
+  import { researchItems } from '../data/researchItems';
+  import { codingPoints, activeUsers } from '../stores/game';
+  import { researchedTechs, research } from '../stores/research';
 
-  export let codingPoints: number = 0;
-  export let activeUsers: number = 0;
-  export let researchedTechs: string[] = [];
-  export let techTree: Tech[] = [];
+  // Props removed, using stores directly
+  const techTree = researchItems;
 
-  const dispatch = createEventDispatcher();
-
-  function research(tech: Tech) {
-    dispatch('research', { techId: tech.id, price: tech.cost });
+  function handleResearch(tech: Tech) {
+    research(tech.id);
   }
 
-  function isLocked(tech: Tech, currentResearched: string[]): boolean {
+  function isLocked(tech: Tech): boolean {
     if (!tech.req) return false;
-    return !currentResearched.includes(tech.req);
+    return !$researchedTechs.includes(tech.req);
   }
 
-  function isResearched(techId: string, currentResearched: string[]): boolean {
-    return currentResearched.includes(techId);
+  function isResearched(techId: string): boolean {
+    return $researchedTechs.includes(techId);
   }
 
   function canAfford(tech: Tech): boolean {
     if (tech.currency === 'users') {
-      return activeUsers >= tech.cost;
+      return $activeUsers >= tech.cost;
     }
-    return codingPoints >= tech.cost;
+    return $codingPoints >= tech.cost;
   }
 
-
   function getLineColor(sourceTechId: string, targetTechId: string): string {
-    const sourceResearched = isResearched(sourceTechId, researchedTechs);
-    const targetResearched = isResearched(targetTechId, researchedTechs);
+    const sourceResearched = isResearched(sourceTechId);
+    const targetResearched = isResearched(targetTechId);
     
     if (targetResearched) return '#ffd700'; // Gold for completed path
     if (sourceResearched) return '#ffffff'; // White for available path
     return '#555555'; // Grey for locked path
   }
+  
   let isDragging = false;
   let startX = 0;
   let startY = 0;
@@ -102,6 +101,7 @@
   <h2>Research Lab (Tech Tree)</h2>
   
   <!-- svelte-ignore a11y-no-noninteractive-tabindex -->
+  <!-- svelte-ignore a11y_no_noninteractive_element_interactions -->
   <div 
     class="tech-tree-viewport" 
     bind:this={viewport}
@@ -131,7 +131,7 @@
                 y2={tech.y + 25} 
                 stroke={getLineColor(parent.id, tech.id)}
                 stroke-width="2"
-                stroke-dasharray={isResearched(parent.id, researchedTechs) ? "0" : "5,5"}
+                stroke-dasharray={isResearched(parent.id) ? "0" : "5,5"}
               />
             {/if}
           {/if}
@@ -140,8 +140,8 @@
 
       <!-- Layer 2: Nodes -->
       {#each techTree as tech}
-        {@const locked = isLocked(tech, researchedTechs)}
-        {@const researched = isResearched(tech.id, researchedTechs)}
+        {@const locked = isLocked(tech)}
+        {@const researched = isResearched(tech.id)}
         {@const affordable = canAfford(tech)}
         
         <div 
@@ -154,8 +154,8 @@
           role="button"
           tabindex="0"
           aria-label={tech.name}
-          on:click|stopPropagation={() => !locked && !researched && affordable && research(tech)}
-          on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && !locked && !researched && affordable && research(tech)}
+          on:click|stopPropagation={() => !locked && !researched && affordable && research(tech.id)}
+          on:keydown={(e) => (e.key === 'Enter' || e.key === ' ') && !locked && !researched && affordable && research(tech.id)}
         >
           <!-- Icon or Symbol -->
           <div class="node-icon">

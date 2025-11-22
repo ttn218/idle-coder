@@ -1,11 +1,21 @@
 <script lang="ts">
   import { fade, fly } from 'svelte/transition';
   import type { Achievement } from '../types';
+  import { notificationQueue } from '../stores/achievements';
 
-  export let achievement: Achievement | null = null;
+  let currentNotification: Achievement | null = null;
+
+  $: if ($notificationQueue.length > 0 && !currentNotification) {
+    currentNotification = $notificationQueue[0];
+    notificationQueue.update(q => q.slice(1));
+    
+    setTimeout(() => {
+      currentNotification = null;
+    }, 3000);
+  }
 </script>
 
-{#if achievement}
+{#if currentNotification}
   <div 
     class="notification" 
     in:fly="{{ y: 50, duration: 500 }}" 
@@ -14,8 +24,8 @@
     <div class="icon">🏆</div>
     <div class="content">
       <div class="title">Achievement Unlocked!</div>
-      <div class="name">{achievement.name}</div>
-      <div class="desc">{achievement.description}</div>
+      <div class="name">{currentNotification.name}</div>
+      <div class="desc">{currentNotification.description}</div>
     </div>
   </div>
 {/if}

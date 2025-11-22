@@ -1,13 +1,9 @@
 <script lang="ts">
-  import { createEventDispatcher } from 'svelte';
   import type { Upgrade } from '../types';
   import { formatNumber } from '../utils/format';
-
-  export let codingPoints: number = 0;
-  export let upgrades: Upgrade[] = [];
-  export let costMultiplier: number = 1;
-
-  const dispatch = createEventDispatcher();
+  import { upgrades, buyUpgrade } from '../stores/upgrades';
+  import { codingPoints } from '../stores/game';
+  import { costMultiplier } from '../stores/research';
 
   let buyAmount: 1 | 10 | -1 = 1; // -1 represents MAX
   let expandedCategories: Record<string, boolean> = {
@@ -18,7 +14,7 @@
   };
 
   // Group upgrades by category
-  $: groupedUpgrades = upgrades.reduce((acc, upgrade) => {
+  $: groupedUpgrades = $upgrades.reduce((acc, upgrade) => {
     const category = upgrade.category || 'Misc';
     if (!acc[category]) acc[category] = [];
     acc[category].push(upgrade);
@@ -30,27 +26,23 @@
   }
 
   // Helper functions using geometric series formulas
+  // Note: These are duplicated from store logic for UI display purposes.
+  // Ideally, we could export these from a shared utility or the store itself.
   function getPrice(basePrice: number, level: number): number {
-    return basePrice * Math.pow(1.5, level) * costMultiplier;
+    return basePrice * Math.pow(1.5, level) * $costMultiplier;
   }
 
   function getSumPrice(basePrice: number, level: number, count: number): number {
-    // We need to apply multiplier to the base price for the current level
-    const currentBasePrice = basePrice * Math.pow(1.5, level) * costMultiplier;
-    
+    const currentBasePrice = basePrice * Math.pow(1.5, level) * $costMultiplier;
     if (count === 1) return currentBasePrice;
-    
-    // Geometric series sum: a * (r^n - 1) / (r - 1)
-    // where a = currentBasePrice, r = 1.5, n = count
     return currentBasePrice * (Math.pow(1.5, count) - 1) / (1.5 - 1);
   }
 
   function getMaxBuyable(basePrice: number, level: number, currentPoints: number): number {
-    const currentBasePrice = basePrice * Math.pow(1.5, level) * costMultiplier;
+    const currentBasePrice = basePrice * Math.pow(1.5, level) * $costMultiplier;
     
     if (currentPoints < currentBasePrice) return 0;
     
-    // Inverse formula: n = log_r( (Sum * (r-1) / a) + 1 )
     return Math.floor(Math.log(1 + (currentPoints * (1.5 - 1)) / currentBasePrice) / Math.log(1.5));
   }
 
@@ -59,18 +51,10 @@
     acc[category] = items.map(item => {
       let count = 0;
       let cost = 0;
-      
-      // Use the level from the upgrades prop, fallback to item.level if not found (though upgrades should be the source of truth)
-      // The 'upgrades' prop is the array of current upgrade states.
-      // We need to find the specific upgrade object in the 'upgrades' array that matches 'item.id'.
-      // However, 'items' here comes from 'groupedUpgrades' which is derived from 'upgrades'.
-      // So 'item' IS the current upgrade state.
       const currentLevel = item.level; 
 
       if (buyAmount === -1) { // MAX mode
-        count = getMaxBuyable(item.basePrice, currentLevel, codingPoints);
-        // If count is 0, we might want to show the cost for 1 item but disable it, 
-        // or show 0 cost. Let's show cost for next 1 item if count is 0 so user knows how much they need.
+        count = getMaxBuyable(item.basePrice, currentLevel, $codingPoints);
         if (count > 0) {
           cost = getSumPrice(item.basePrice, currentLevel, count);
         } else {
@@ -90,15 +74,9 @@
     return acc;
   }, {} as Record<string, (Upgrade & { buyCount: number, currentCost: number })[]>);
 
-  function buyUpgrade(upgrade: Upgrade & { buyCount: number, currentCost: number }) {
-    if (upgrade.buyCount > 0 && codingPoints >= upgrade.currentCost) {
-      dispatch('buy', { 
-        index: upgrades.findIndex(u => u.id === upgrade.id),
-        price: upgrade.currentCost,
-        type: upgrade.type, 
-        effectValue: upgrade.effectValue * upgrade.buyCount,
-        amount: upgrade.buyCount
-      });
+  function handleBuy(upgrade: Upgrade & { buyCount: number, currentCost: number }) {
+    if (upgrade.buyCount > 0 && $codingPoints >= upgrade.currentCost) {
+      buyUpgrade(upgrade.id, upgrade.buyCount);
     }
   }
 </script>
@@ -124,7 +102,7 @@
         {#if expandedCategories[category]}
           <div class="category-items">
             {#each items as upgrade}
-              {@const canBuy = (buyAmount === -1 ? upgrade.buyCount > 0 : true) && codingPoints >= upgrade.currentCost}
+              {@const canBuy = (buyAmount === -1 ? upgrade.buyCount > 0 : true) && $codingPoints >= upgrade.currentCost}
               
               <div class="upgrade-item">
                 <div class="info">
@@ -136,7 +114,7 @@
                 </div>
                 <button 
                   class="buy-btn" 
-                  on:click={() => buyUpgrade(upgrade)} 
+                  on:click={() => handleBuy(upgrade)} 
                   disabled={!canBuy}
                 >
                   {#if buyAmount === -1}
