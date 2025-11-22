@@ -1,15 +1,14 @@
 <script lang="ts">
-  import type { Upgrade } from '../types';
-  import { formatNumber, getPrice, getSumPrice, getMaxBuyable } from '../lib/utils';
   import { upgrades } from '../stores/upgrades';
-  import { codingPoints } from '../stores/game';
-  import { costMultiplier } from '../stores/research';
+  import { codingPoints, costDiscountMultiplier } from '../stores/game';
   import { GameController } from '../core/GameController';
+  import { getPrice, getSumPrice, getMaxBuyable, formatNumber } from '../lib/utils';
+  import type { Upgrade } from '../types';
 
-  let buyAmount: 1 | 10 | -1 = 1; // -1 represents MAX
+  let buyAmount = 1;
   let expandedCategories: Record<string, boolean> = {
-    'Hardware': true,
-    'Software': true,
+    'Language': true,
+    'Tool': true,
     'Personnel': true,
     'Buff': true
   };
@@ -34,15 +33,15 @@
       const currentLevel = item.level; 
 
       if (buyAmount === -1) { // MAX mode
-        count = getMaxBuyable(item.basePrice, currentLevel, $codingPoints, $costMultiplier);
+        count = getMaxBuyable(item.basePrice, currentLevel, $codingPoints, $costDiscountMultiplier);
         if (count > 0) {
-          cost = getSumPrice(item.basePrice, currentLevel, count, $costMultiplier);
+          cost = getSumPrice(item.basePrice, currentLevel, count, $costDiscountMultiplier);
         } else {
-          cost = getPrice(item.basePrice, currentLevel, $costMultiplier);
+          cost = getPrice(item.basePrice, currentLevel, $costDiscountMultiplier);
         }
       } else { // x1, x10 mode
         count = buyAmount;
-        cost = getSumPrice(item.basePrice, currentLevel, count, $costMultiplier);
+        cost = getSumPrice(item.basePrice, currentLevel, count, $costDiscountMultiplier);
       }
 
       return { 
@@ -55,7 +54,9 @@
   }, {} as Record<string, (Upgrade & { buyCount: number, currentCost: number })[]>);
 
   function handleBuy(upgrade: Upgrade & { buyCount: number, currentCost: number }) {
-    GameController.purchaseItem(upgrade);
+    // For MAX mode, use buyCount. For x1/x10 mode, use buyAmount
+    const quantity = buyAmount === -1 ? upgrade.buyCount : buyAmount;
+    GameController.purchaseItem(upgrade.id, quantity);
   }
 </script>
 

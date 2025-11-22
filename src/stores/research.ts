@@ -14,56 +14,10 @@ export const addTech = (techId: string) => {
   });
 };
 
+// Derived stores for tech effects - REMOVED in favor of ResearchManager
+// Logic is now handled imperatively in ResearchManager.ts
+// We keep researchedTechs as the source of truth.
+
 export const resetResearch = () => {
   researchedTechs.set([]);
 };
-
-// Derived stores for tech effects
-export const techEffects = derived(researchedTechs, ($researchedTechs) => {
-  return $researchedTechs.reduce(
-    (acc, techId) => {
-      const tech = researchItems.find((t) => t.id === techId);
-      if (tech && tech.effect) {
-        switch (tech.effect.type) {
-          case "loop":
-            acc.autoClick = true;
-            break;
-          case "function":
-            acc.costDiscount *= 1 - (tech.effect.value || 0);
-            break;
-          case "oop":
-            acc.ppsMultiplier *= tech.effect.value ? 1 + tech.effect.value : 2;
-            break;
-          case "prestigeBoost":
-            acc.prestigeBoost += tech.effect.value || 0;
-            break;
-        }
-      }
-      return acc;
-    },
-    {
-      clickMultiplier: 1,
-      ppsMultiplier: 1,
-      costDiscount: 1,
-      autoClick: false,
-      prestigeBoost: 0,
-    }
-  );
-});
-
-export const costMultiplier = derived(
-  techEffects,
-  ($effects) => $effects.costDiscount
-);
-export const techPpsMultiplier = derived(
-  techEffects,
-  ($effects) => $effects.ppsMultiplier
-);
-export const clickMultiplier = derived(
-  techEffects,
-  ($effects) => $effects.clickMultiplier
-);
-export const prestigeBoost = derived(
-  techEffects,
-  ($effects) => $effects.prestigeBoost
-);

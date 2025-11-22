@@ -5,6 +5,11 @@ import {
   pointsPerSecond,
   activeUsers,
   clickCount,
+  costDiscountMultiplier,
+  unlockedFeatures,
+  prestigeBoost,
+  ppsMultiplier,
+  clickMultiplier,
   resetGameData,
 } from "./game";
 import { upgrades, resetUpgrades } from "./upgrades";
@@ -24,6 +29,11 @@ export const saveGame = () => {
     clickCount: get(clickCount),
     upgrades: get(upgrades),
     researchedTechs: get(researchedTechs),
+    costDiscountMultiplier: get(costDiscountMultiplier),
+    unlockedFeatures: Array.from(get(unlockedFeatures)),
+    prestigeBoost: get(prestigeBoost),
+    ppsMultiplier: get(ppsMultiplier),
+    clickMultiplier: get(clickMultiplier),
     achievements: get(achievements).map((a) => ({
       id: a.id,
       unlocked: a.unlocked,
@@ -49,6 +59,15 @@ export const loadGame = () => {
       if (data.researchedTechs) {
         researchedTechs.set(data.researchedTechs);
       }
+
+      // Load new research stores
+      if (data.costDiscountMultiplier)
+        costDiscountMultiplier.set(data.costDiscountMultiplier);
+      if (data.unlockedFeatures)
+        unlockedFeatures.set(new Set(data.unlockedFeatures));
+      if (data.prestigeBoost) prestigeBoost.set(data.prestigeBoost);
+      if (data.ppsMultiplier) ppsMultiplier.set(data.ppsMultiplier);
+      if (data.clickMultiplier) clickMultiplier.set(data.clickMultiplier);
 
       if (data.upgrades) {
         // Merge with initial to keep structure

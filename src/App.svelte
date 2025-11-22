@@ -18,26 +18,39 @@
     clickPower, 
     pointsPerSecond, 
     activeUsers, 
-    prestigeMultiplier
+    prestigeMultiplier,
+    prestigeBoost,
   } from './stores/game';
-  import { researchedTechs, prestigeBoost } from './stores/research';
+  import { researchedTechs } from './stores/research';
   import { achievements } from './stores/achievements';
+
+  // Calculate tech effects for UI display (simplified)
+  $: autoClickUnlocked = $researchedTechs.includes("loop");
+  $: currentCostDiscount = 1; // TODO: Get from store if needed for display
+  $: currentPpsMultiplier = 1; // TODO: Get from store
+  $: currentClickMultiplier = 1; // TODO: Get from store
 
   // Tech Multipliers Calculation
   $: techEffects = $researchedTechs.reduce((acc, techId) => {
     const tech = researchItems.find((t: Tech) => t.id === techId);
-    if (tech && tech.effect) {
-      switch (tech.effect.type) {
-        case 'loop':
-          acc.autoClick = true;
-          break;
-        case 'function':
-          acc.costDiscount *= (1 - (tech.effect.value ?? 0));
-          break;
-        case 'oop':
-          acc.ppsMultiplier *= (tech.effect.value ? (1 + tech.effect.value) : 2);
-          break;
-      }
+    if (tech && tech.effects) {
+      tech.effects.forEach(effect => {
+        switch (effect.type) {
+          case 'clickMultiplier':
+            acc.clickMultiplier *= effect.value;
+            break;
+          case 'ppsMultiplier':
+            acc.ppsMultiplier *= effect.value;
+            break;
+          case 'costDiscount':
+            acc.costDiscount *= effect.value;
+            break;
+          case 'unlockFeature':
+            // Handle feature unlock for UI if needed
+            if (effect.value === 1) acc.autoClick = true; // Assuming value 1 is loop/autoClick
+            break;
+        }
+      });
     }
     return acc;
   }, { clickMultiplier: 1, ppsMultiplier: 1, costDiscount: 1, autoClick: false });

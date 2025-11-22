@@ -9,15 +9,22 @@ export interface Upgrade {
   description: string;
 }
 
+export interface ResearchEffect {
+  type:
+    | "clickMultiplier"
+    | "ppsMultiplier"
+    | "costDiscount"
+    | "prestigeBoost"
+    | "unlockFeature";
+  value: number;
+}
+
 export interface Tech {
   id: string;
   name: string;
   description: string;
   req?: string; // Prerequisite tech ID
-  effect: {
-    type: "loop" | "function" | "oop" | "prestige" | "prestigeBoost";
-    value?: number;
-  };
+  effects: ResearchEffect[];
   x: number;
   y: number;
   costs: {

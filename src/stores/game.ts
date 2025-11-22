@@ -1,11 +1,18 @@
 import { writable, derived } from "svelte/store";
-import { prestigeBoost } from "./research";
+// import { prestigeBoost } from "./research"; // Removed import as it is now local
 
 export const codingPoints = writable(0);
 export const clickPower = writable(1);
 export const pointsPerSecond = writable(0);
 export const activeUsers = writable(0);
 export const clickCount = writable(0);
+
+// Research related stores
+export const costDiscountMultiplier = writable(1.0);
+export const unlockedFeatures = writable<Set<string>>(new Set());
+export const prestigeBoost = writable(0); // Moved from derived in research.ts to writable here
+export const ppsMultiplier = writable(1.0);
+export const clickMultiplier = writable(1.0);
 
 // Multipliers (derived or writable depending on complexity, starting simple)
 export const prestigeMultiplier = derived(
