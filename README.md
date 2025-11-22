@@ -1,47 +1,36 @@
-# Svelte + TS + Vite
+# Idle Coder
 
-This template should help get you started developing with Svelte and TypeScript in Vite.
+**Vibe Coding**을 활용하여 제작된 방치형(Idle) 키우기 게임입니다.
 
-## Recommended IDE Setup
+## 📖 프로젝트 소개
 
-[VS Code](https://code.visualstudio.com/) + [Svelte](https://marketplace.visualstudio.com/items?itemName=svelte.svelte-vscode).
+이 프로젝트는 AI 코딩 어시스턴트와 함께 개발된 웹 기반의 방치형 게임입니다. 플레이어는 개발자가 되어 코드를 작성하고, 실력을 키우며, 최고의 개발자로 성장하는 과정을 경험할 수 있습니다.
 
-## Need an official Svelte framework?
+## 🎮 게임 특징
 
-Check out [SvelteKit](https://github.com/sveltejs/kit#readme), which is also powered by Vite. Deploy anywhere with its serverless-first approach and adapt to various platforms, with out of the box support for TypeScript, SCSS, and Less, and easily-added support for mdsvex, GraphQL, PostCSS, Tailwind CSS, and more.
+- **코딩 포인트 획득**: 키보드를 두드려 코드를 작성하고 포인트를 모으세요.
+- **업그레이드 시스템**: 더 효율적인 코딩을 위한 장비와 스킬을 구매하세요.
+- **연구 트리**: 새로운 기술을 연구하여 생산성을 극대화하세요.
+- **업적 시스템**: 다양한 목표를 달성하고 보상을 획득하세요.
+- **서비스 출시 (환생)**: 서비스를 출시하여 유저를 확보하고, 더 강력한 보너스를 얻어 처음부터 다시 시작하세요.
 
-## Technical considerations
+## 🛠️ 기술 스택
 
-**Why use this over SvelteKit?**
+- **Framework**: Svelte
+- **Language**: TypeScript
+- **Build Tool**: Vite
 
-- It brings its own routing solution which might not be preferable for some users.
-- It is first and foremost a framework that just happens to use Vite under the hood, not a Vite app.
+## 🚀 실행 방법
 
-This template contains as little as possible to get started with Vite + TypeScript + Svelte, while taking into account the developer experience with regards to HMR and intellisense. It demonstrates capabilities on par with the other `create-vite` templates and is a good starting point for beginners dipping their toes into a Vite + Svelte project.
-
-Should you later need the extended capabilities and extensibility provided by SvelteKit, the template has been structured similarly to SvelteKit so that it is easy to migrate.
-
-**Why `global.d.ts` instead of `compilerOptions.types` inside `jsconfig.json` or `tsconfig.json`?**
-
-Setting `compilerOptions.types` shuts out all other types not explicitly listed in the configuration. Using triple-slash references keeps the default TypeScript setting of accepting type information from the entire workspace, while also adding `svelte` and `vite/client` type information.
-
-**Why include `.vscode/extensions.json`?**
-
-Other templates indirectly recommend extensions via the README, but this file allows VS Code to prompt the user to install the recommended extension upon opening the project.
-
-**Why enable `allowJs` in the TS template?**
-
-While `allowJs: false` would indeed prevent the use of `.js` files in the project, it does not prevent the use of JavaScript syntax in `.svelte` files. In addition, it would force `checkJs: false`, bringing the worst of both worlds: not being able to guarantee the entire codebase is TypeScript, and also having worse typechecking for the existing JavaScript. In addition, there are valid use cases in which a mixed codebase may be relevant.
-
-**Why is HMR not preserving my local component state?**
-
-HMR state preservation comes with a number of gotchas! It has been disabled by default in both `svelte-hmr` and `@sveltejs/vite-plugin-svelte` due to its often surprising behavior. You can read the details [here](https://github.com/rixo/svelte-hmr#svelte-hmr).
-
-If you have state that's important to retain within a component, consider creating an external store which would not be replaced by HMR.
-
-```ts
-// store.ts
-// An extremely simple external store
-import { writable } from 'svelte/store'
-export default writable(0)
-```
+1. 저장소 클론
+   ```bash
+   git clone https://github.com/ttn218/idle-coder.git
+   ```
+2. 의존성 설치
+   ```bash
+   npm install
+   ```
+3. 개발 서버 실행
+   ```bash
+   npm run dev
+   ```
