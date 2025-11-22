@@ -20,6 +20,7 @@
     activeUsers, 
     prestigeMultiplier,
     prestigeBoost,
+    prestigeExponent,
   } from './stores/game';
   import { researchedTechs } from './stores/research';
   import { achievements } from './stores/achievements';
@@ -73,8 +74,7 @@
   let gainedUsers: number = 0;
 
   // Derived values for UI
-  $: prestigeExponent = $researchedTechs.includes('viral_marketing') ? 0.6 : 0.5;
-  $: pendingUsers = Math.floor(Math.pow($codingPoints / 1000, prestigeExponent));
+  $: pendingUsers = Math.floor(Math.pow($codingPoints / 1000, $prestigeExponent));
 
   // Syntax Highlighting
   $: formattedCode = displayCode

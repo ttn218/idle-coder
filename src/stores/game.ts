@@ -13,6 +13,7 @@ export const unlockedFeatures = writable<Set<string>>(new Set());
 export const prestigeBoost = writable(0); // Moved from derived in research.ts to writable here
 export const ppsMultiplier = writable(1.0);
 export const clickMultiplier = writable(1.0);
+export const prestigeExponent = writable(0.5); // Base prestige exponent, can be increased by research
 
 // Multipliers (derived or writable depending on complexity, starting simple)
 export const prestigeMultiplier = derived(

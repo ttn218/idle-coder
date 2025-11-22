@@ -10,6 +10,7 @@ import {
   prestigeBoost,
   ppsMultiplier,
   clickMultiplier,
+  prestigeExponent,
   resetGameData,
 } from "./game";
 import { upgrades, resetUpgrades } from "./upgrades";
@@ -34,6 +35,7 @@ export const saveGame = () => {
     prestigeBoost: get(prestigeBoost),
     ppsMultiplier: get(ppsMultiplier),
     clickMultiplier: get(clickMultiplier),
+    prestigeExponent: get(prestigeExponent),
     achievements: get(achievements).map((a) => ({
       id: a.id,
       unlocked: a.unlocked,
@@ -68,6 +70,7 @@ export const loadGame = () => {
       if (data.prestigeBoost) prestigeBoost.set(data.prestigeBoost);
       if (data.ppsMultiplier) ppsMultiplier.set(data.ppsMultiplier);
       if (data.clickMultiplier) clickMultiplier.set(data.clickMultiplier);
+      if (data.prestigeExponent) prestigeExponent.set(data.prestigeExponent);
 
       if (data.upgrades) {
         // Merge with initial to keep structure

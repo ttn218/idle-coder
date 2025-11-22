@@ -146,7 +146,7 @@ export const researchItems: Tech[] = [
     name: "바이럴 마케팅 (Viral Marketing)",
     description: "입소문을 통해 서비스 오픈 시 더 많은 유저를 모읍니다.",
     req: "microservices",
-    effects: [{ type: "prestigeBoost", value: 0.5 }], // 부스트 +0.5 (50%)
+    effects: [{ type: "prestigeExponent", value: 0.6 }], // 프레스티지 지수 0.5 → 0.6 증가
     x: 550,
     y: 950,
     costs: { users: 10 }, // 유저 10명 소모

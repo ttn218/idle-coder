@@ -7,6 +7,7 @@ import {
   prestigeBoost,
   ppsMultiplier,
   clickMultiplier,
+  prestigeExponent,
 } from "../stores/game";
 import { researchedTechs } from "../stores/research";
 import { researchItems } from "../data/researchItems";
@@ -17,22 +18,18 @@ export class ResearchManager {
     switch (effect.type) {
       case "clickMultiplier":
         clickMultiplier.update((n) => n * effect.value);
-        // Also update current clickPower to reflect the new multiplier immediately if needed?
-        // But clickPower update logic in upgrades.ts needs to know about this.
-        // For now, let's assume clickPower is base * multiplier.
-        // Wait, clickPower in game.ts is a writable. Is it base or total?
-        // If it's total, we multiply it.
-        clickPower.update((n) => n * effect.value);
         break;
       case "ppsMultiplier":
         ppsMultiplier.update((n) => n * effect.value);
-        pointsPerSecond.update((n) => n * effect.value);
         break;
       case "costDiscount":
         costDiscountMultiplier.update((n) => n * effect.value);
         break;
       case "prestigeBoost":
         prestigeBoost.update((n) => n + effect.value);
+        break;
+      case "prestigeExponent":
+        prestigeExponent.update(() => effect.value);
         break;
       case "unlockFeature":
         unlockedFeatures.update((s) => {

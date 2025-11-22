@@ -23,8 +23,7 @@ export const buyUpgrade = (upgradeId: string, quantity: number = 1) => {
   // Calculate total cost for the quantity
   let totalCost = 0;
   for (let i = 0; i < quantity; i++) {
-    totalCost +=
-      getPrice(upgrade.basePrice, upgrade.level + i, 1.15) * discount;
+    totalCost += getPrice(upgrade.basePrice, upgrade.level + i) * discount;
   }
 
   if (get(codingPoints) >= totalCost) {

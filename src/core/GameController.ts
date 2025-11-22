@@ -11,6 +11,7 @@ import {
   unlockedFeatures,
   ppsMultiplier,
   clickMultiplier,
+  prestigeExponent,
 } from "../stores/game";
 import { researchedTechs, addTech, resetResearch } from "../stores/research";
 import { upgrades, resetUpgrades, buyUpgrade } from "../stores/upgrades";
@@ -35,10 +36,9 @@ export class GameController {
   private static saveInterval: number;
 
   static handleUserCodeInput() {
-    // clickPower in store is the base power.
-    // clickMultiplier is the global multiplier.
-    // We should multiply them.
-    const power = get(clickPower) * get(clickMultiplier);
+    // Calculate actual click power: base * clickMultiplier * prestigeMultiplier
+    const power =
+      get(clickPower) * get(clickMultiplier) * get(prestigeMultiplier);
 
     codingPoints.update((n) => n + power);
     clickCount.update((n) => n + 1);
@@ -83,11 +83,10 @@ export class GameController {
     const currentPoints = get(codingPoints);
     if (currentPoints < 10000) return null;
 
-    // Calculate pending users based on current logic
-    const techs = get(researchedTechs);
-    const prestigeExponent = techs.includes("viral_marketing") ? 0.6 : 0.5;
+    // Calculate pending users based on prestige exponent from research
+    const prestigeExp = get(prestigeExponent);
     const pendingUsers = Math.floor(
-      Math.pow(currentPoints / 1000, prestigeExponent)
+      Math.pow(currentPoints / 1000, prestigeExp)
     );
 
     if (
@@ -122,6 +121,7 @@ export class GameController {
       prestigeBoost.set(0);
       ppsMultiplier.set(1.0);
       clickMultiplier.set(1.0);
+      prestigeExponent.set(0.5);
 
       saveGame();
       checkAchievements();

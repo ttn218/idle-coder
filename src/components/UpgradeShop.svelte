@@ -35,13 +35,13 @@
       if (buyAmount === -1) { // MAX mode
         count = getMaxBuyable(item.basePrice, currentLevel, $codingPoints, $costDiscountMultiplier);
         if (count > 0) {
-          cost = getSumPrice(item.basePrice, currentLevel, count, $costDiscountMultiplier);
+          cost = getSumPrice(item.basePrice, currentLevel, count) * $costDiscountMultiplier;
         } else {
-          cost = getPrice(item.basePrice, currentLevel, $costDiscountMultiplier);
+          cost = getPrice(item.basePrice, currentLevel) * $costDiscountMultiplier;
         }
       } else { // x1, x10 mode
         count = buyAmount;
-        cost = getSumPrice(item.basePrice, currentLevel, count, $costDiscountMultiplier);
+        cost = getSumPrice(item.basePrice, currentLevel, count) * $costDiscountMultiplier;
       }
 
       return { 

@@ -15,6 +15,7 @@ export interface ResearchEffect {
     | "ppsMultiplier"
     | "costDiscount"
     | "prestigeBoost"
+    | "prestigeExponent"
     | "unlockFeature";
   value: number;
 }
