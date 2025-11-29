@@ -13,9 +13,14 @@ import {
   prestigeExponent,
   achievementMultiplier,
   unlockedAchievements,
+  capital,
+  marketingPpsBonus,
+  marketingClickBonus,
+  marketingPrestigeBonus,
   resetGameData,
 } from "./game";
 import { upgrades, resetUpgrades } from "./upgrades";
+import { marketingUpgrades } from "./marketing";
 import { researchedTechs, resetResearch } from "./research";
 import { achievements, resetAchievements } from "./achievements";
 import { shopItems } from "../data/shopItems";
@@ -40,6 +45,11 @@ export const saveGame = () => {
     prestigeExponent: get(prestigeExponent),
     achievementMultiplier: get(achievementMultiplier),
     unlockedAchievements: Array.from(get(unlockedAchievements)),
+    capital: get(capital),
+    marketingPpsBonus: get(marketingPpsBonus),
+    marketingClickBonus: get(marketingClickBonus),
+    marketingPrestigeBonus: get(marketingPrestigeBonus),
+    marketingUpgrades: get(marketingUpgrades),
     achievements: get(achievements).map((a) => ({
       id: a.id,
       unlocked: a.unlocked,
@@ -82,6 +92,15 @@ export const loadGame = () => {
       if (data.unlockedAchievements)
         unlockedAchievements.set(new Set(data.unlockedAchievements));
 
+      // Load capital and marketing stores
+      if (data.capital !== undefined) capital.set(data.capital);
+      if (data.marketingPpsBonus !== undefined)
+        marketingPpsBonus.set(data.marketingPpsBonus);
+      if (data.marketingClickBonus !== undefined)
+        marketingClickBonus.set(data.marketingClickBonus);
+      if (data.marketingPrestigeBonus !== undefined)
+        marketingPrestigeBonus.set(data.marketingPrestigeBonus);
+
       if (data.upgrades) {
         // Merge with initial to keep structure
         const mergedUpgrades = shopItems.map((initUpgrade) => {
@@ -93,6 +112,10 @@ export const loadGame = () => {
             : initUpgrade;
         });
         upgrades.set(mergedUpgrades);
+      }
+
+      if (data.marketingUpgrades) {
+        marketingUpgrades.set(data.marketingUpgrades);
       }
 
       if (data.achievements) {

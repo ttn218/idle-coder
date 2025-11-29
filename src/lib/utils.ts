@@ -17,6 +17,12 @@ export function formatNumber(value: number): string {
     "Oc",
     "No",
     "Dc",
+    "Uo",
+    "Do",
+    "Co",
+    "No",
+    "Dd",
+    "Ud",
   ];
   let suffixIndex = 0;
 

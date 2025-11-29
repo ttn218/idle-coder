@@ -1,8 +1,15 @@
 export interface Upgrade {
   id: string;
   name: string;
-  type: "click" | "auto";
-  category: "Hardware" | "Software" | "Personnel" | "Buff";
+  type: "click" | "auto" | "marketing";
+  category:
+    | "Hardware"
+    | "Software"
+    | "Personnel"
+    | "Buff"
+    | "Reach"
+    | "Retention"
+    | "Efficiency";
   basePrice: number;
   level: number;
   effectValue: number;

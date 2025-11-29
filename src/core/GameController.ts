@@ -13,9 +13,19 @@ import {
   clickMultiplier,
   prestigeExponent,
   achievementMultiplier,
+  capital,
+  capitalMultiplier,
+  marketingPpsBonus,
+  marketingClickBonus,
+  marketingPrestigeBonus,
 } from "../stores/game";
 import { researchedTechs, addTech, resetResearch } from "../stores/research";
 import { upgrades, resetUpgrades, buyUpgrade } from "../stores/upgrades";
+import {
+  marketingUpgrades,
+  buyMarketing,
+  resetMarketing,
+} from "../stores/marketing";
 import {
   achievements,
   checkAchievements,
@@ -37,14 +47,19 @@ export class GameController {
   private static saveInterval: number;
 
   static handleUserCodeInput() {
-    // Calculate actual click power: base * clickMultiplier * prestigeMultiplier * achievementMultiplier
-    const power =
+    // Calculate actual click power: (base * multipliers) + marketing bonus, then apply capital
+    const basePower =
       get(clickPower) *
       get(clickMultiplier) *
       get(prestigeMultiplier) *
       get(achievementMultiplier);
 
-    codingPoints.update((n) => n + power);
+    const marketingBonus = get(marketingClickBonus);
+    const capMult = get(capitalMultiplier);
+
+    const totalPower = (basePower + marketingBonus) * capMult;
+
+    codingPoints.update((n) => n + totalPower);
     clickCount.update((n) => n + 1);
     SoundManager.getInstance().playTypingSound();
     checkAchievements();
@@ -52,6 +67,11 @@ export class GameController {
 
   static purchaseItem(itemId: string, quantity: number = 1) {
     buyUpgrade(itemId, quantity);
+    checkAchievements();
+  }
+
+  static purchaseMarketing(marketingId: string, quantity: number = 1) {
+    buyMarketing(marketingId, quantity);
     checkAchievements();
   }
 
@@ -89,8 +109,9 @@ export class GameController {
 
     // Calculate pending users based on prestige exponent from research
     const prestigeExp = get(prestigeExponent);
+    const marketingBonus = get(marketingPrestigeBonus);
     const pendingUsers = Math.floor(
-      Math.pow(currentPoints / 1000, prestigeExp)
+      Math.pow(currentPoints / 1000, prestigeExp) * (1 + marketingBonus)
     );
 
     if (
@@ -135,6 +156,53 @@ export class GameController {
     return null;
   }
 
+  static triggerIPO() {
+    const currentUsers = get(activeUsers);
+    if (currentUsers < 1000000) return null;
+
+    // Calculate capital gain
+    const capitalGain = Math.floor(Math.sqrt(currentUsers / 100000));
+
+    if (
+      confirm(
+        `IPO(기업 공개)를 진행하시겠습니까?\n\n획득 자본금: ${capitalGain}\n\n⚠️ 경고: 모든 데이터가 초기화됩니다!\n(업적과 자본금만 유지됩니다)`
+      )
+    ) {
+      // Deep reset - everything except achievements and capital
+      capital.update((n) => n + capitalGain);
+
+      // Reset all game data
+      codingPoints.set(0);
+      clickPower.set(1);
+      pointsPerSecond.set(0);
+      clickCount.set(0);
+      activeUsers.set(0);
+
+      // Reset upgrades, research, marketing
+      resetUpgrades();
+      resetResearch();
+      resetMarketing();
+
+      // Reset all multipliers (except achievement and capital)
+      costDiscountMultiplier.set(1.0);
+      unlockedFeatures.set(new Set());
+      prestigeBoost.set(0);
+      ppsMultiplier.set(1.0);
+      clickMultiplier.set(1.0);
+      prestigeExponent.set(0.5);
+
+      // Reset marketing bonuses
+      marketingPpsBonus.set(0);
+      marketingClickBonus.set(0);
+      marketingPrestigeBonus.set(0);
+
+      saveGame();
+      checkAchievements();
+      return capitalGain;
+    }
+    return null;
+  }
+
   static startGameLoop() {
     // Load game data
     loadGame();
@@ -145,8 +213,12 @@ export class GameController {
       const multiplier = get(ppsMultiplier);
       const prestigeMult = get(prestigeMultiplier);
       const achieveMult = get(achievementMultiplier);
+      const marketingBonus = get(marketingPpsBonus);
+      const capMult = get(capitalMultiplier);
 
-      const finalPPS = pps * multiplier * prestigeMult * achieveMult;
+      const finalPPS =
+        (pps * multiplier * prestigeMult * achieveMult + marketingBonus) *
+        capMult;
 
       if (finalPPS > 0) {
         codingPoints.update((n) => n + finalPPS / 10);

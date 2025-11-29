@@ -19,10 +19,24 @@ export const prestigeExponent = writable(0.5); // Base prestige exponent, can be
 export const achievementMultiplier = writable(1.0); // Global production multiplier from achievements
 export const unlockedAchievements = writable<Set<string>>(new Set()); // Set of unlocked achievement IDs
 
+// IPO system stores (persistent through prestige AND IPO)
+export const capital = writable(0); // Capital from IPO - most permanent currency
+
+// Marketing system stores (persistent through prestige, reset on IPO)
+export const marketingPpsBonus = writable(0); // Additive PPS bonus from marketing
+export const marketingClickBonus = writable(0); // Additive click bonus from marketing
+export const marketingPrestigeBonus = writable(0); // Multiplier for prestige gain
+
 // Multipliers (derived or writable depending on complexity, starting simple)
 export const prestigeMultiplier = derived(
   [activeUsers, prestigeBoost],
   ([$users, $boost]) => 1 + $users * 0.1 * ($boost + 1)
+);
+
+// Capital multiplier: x10 per capital (extremely powerful)
+export const capitalMultiplier = derived(
+  capital,
+  ($capital) => 1 + $capital * 9 // 1 capital = x10, 2 capital = x19, etc.
 );
 
 // techPpsMultiplier might need to be in research store or here. Let's keep it simple for now.

@@ -4,6 +4,8 @@
   import UpgradeShop from './components/UpgradeShop.svelte';
   import ResearchTree from './components/ResearchTree.svelte';
   import AchievementNotification from './components/AchievementNotification.svelte';
+  import MarketingPanel from './components/MarketingPanel.svelte';
+  import IPOPanel from './components/IPOPanel.svelte';
   
   // Import types and data
   import type { Upgrade, Tech, Achievement } from './types';
@@ -22,6 +24,7 @@
     prestigeBoost,
     prestigeExponent,
     achievementMultiplier,
+    capital,
   } from './stores/game';
   import { researchedTechs } from './stores/research';
   import { achievements } from './stores/achievements';
@@ -94,7 +97,7 @@
     .split('\n')
     .map(line => line + '\n');
 
-  let currentTab: 'upgrades' | 'research' | 'achievements' | 'system' = 'upgrades';
+  let currentTab: 'upgrades' | 'research' | 'marketing' | 'ipo' | 'achievements' | 'system' = 'upgrades';
 
   function handleKeydown(event: KeyboardEvent) {
     if (event.code === 'Space') {
@@ -201,29 +204,27 @@
 
   <div class="right-panel">
     <div class="tabs">
-      <button 
-        class:active={currentTab === 'upgrades'} 
-        on:click={() => currentTab = 'upgrades'}
-      >Upgrades</button>
-      <button 
-        class:active={currentTab === 'research'} 
-        on:click={() => currentTab = 'research'}
-      >Research</button>
-      <button 
-        class:active={currentTab === 'achievements'} 
-        on:click={() => currentTab = 'achievements'}
-      >Achievements</button>
-      <button 
-        class:active={currentTab === 'system'} 
-        on:click={() => currentTab = 'system'}
-      >System</button>
+      <button class:active={currentTab === 'upgrades'} on:click={() => currentTab = 'upgrades'}>Upgrades</button>
+      <button class:active={currentTab === 'research'} on:click={() => currentTab = 'research'}>Research</button>
+      <button class:active={currentTab === 'marketing'} on:click={() => currentTab = 'marketing'}>Marketing</button>
+      <button class:active={currentTab === 'ipo'} on:click={() => currentTab = 'ipo'} disabled={$activeUsers < 100000}>
+        IPO {$activeUsers < 100000 ? '🔒' : ''}
+      </button>
+      <button class:active={currentTab === 'achievements'} on:click={() => currentTab = 'achievements'}>Achievements</button>
+      <button class:active={currentTab === 'system'} on:click={() => currentTab = 'system'}>System</button>
     </div>
 
     <div class="tab-content">
       {#if currentTab === 'upgrades'}
         <UpgradeShop />
       {:else if currentTab === 'research'}
-        <ResearchTree />
+        <div class="research-panel">
+          <ResearchTree />
+        </div>
+      {:else if currentTab === 'marketing'}
+        <MarketingPanel />
+      {:else if currentTab === 'ipo'}
+        <IPOPanel />
       {:else if currentTab === 'achievements'}
         <div class="achievements-panel">
           <h2>Achievements</h2>
@@ -253,6 +254,9 @@
             <p>Active Users: {formatNumber($activeUsers)}</p>
             <p>Prestige Bonus: +{formatNumber(($prestigeMultiplier - 1) * 100)}% (Research Boost: x{formatNumber($prestigeBoost + 1)})</p>
             <p class="achievement-bonus">Achievement Bonus: x{formatNumber($achievementMultiplier)} (+{formatNumber(($achievementMultiplier - 1) * 100)}%)</p>
+            {#if $capital > 0}
+              <p class="capital-bonus">💰 Capital: {$capital} (x{formatNumber(1 + $capital * 9)} Production)</p>
+            {/if}
           </div>
 
           <div class="controls-group">
@@ -398,7 +402,12 @@
   .tab-content {
     flex: 1;
     overflow-y: auto;
-    background-color: #1e1e1e;
+    padding: 20px;
+  }
+
+  .research-panel {
+    height: 100%;
+    width: 100%;
   }
 
   .system-panel {
